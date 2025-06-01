@@ -66,5 +66,7 @@ streamlit run app.py
 
 ### 5. Live-Demo Video
 
+📺 [Watch Demo on YouTube](https://www.youtube.com/watch?v=huVbfgQ5yPw)
+
 [![Watch the video](https://img.youtube.com/vi/huVbfgQ5yPw/0.jpg)](https://www.youtube.com/watch?v=huVbfgQ5yPw)
 
