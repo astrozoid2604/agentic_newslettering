@@ -63,3 +63,8 @@ You can get your personal API keys here:
 ```bash
 streamlit run app.py
 ```
+
+### 5. Live-Demo Video
+
+[![Watch the video](https://img.youtube.com/vi/huVbfgQ5yPw/0.jpg)](https://www.youtube.com/watch?v=huVbfgQ5yPw)
+
