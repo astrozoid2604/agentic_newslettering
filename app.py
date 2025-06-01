@@ -4,162 +4,182 @@ from crewai import Agent, Task, Crew, LLM
 from crewai_tools import SerperDevTool
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load API keys and configuration from .env
 load_dotenv()
 
-# Streamlit page config
-st.set_page_config(page_title="AI News Generator", page_icon="📰", layout="wide")
+# Set Streamlit page configuration
+st.set_page_config(page_title="Agentic Newsletter Generator", page_icon="🧠", layout="wide")
 
-# Title and description
-st.title("🤖 AI News Generator, powered by CrewAI and Cohere's Command R7B")
-st.markdown("Generate comprehensive blog posts about any topic using AI agents.")
+# App Header
+st.title("🧠 Agentic Newsletter Generator")
+st.markdown("Leverage multi-agent AI powered by CrewAI and Cohere's C-R7B for generating insightful articles.")
 
-# Sidebar
+# Sidebar: Input controls
 with st.sidebar:
-    st.header("Content Settings")
-    
-    # Make the text input take up more space
-    topic = st.text_area(
-        "Enter your topic",
-        height=100,
-        placeholder="Enter the topic you want to generate content about..."
+    st.header("🛠️ Generator Settings")
+
+    user_topic = st.text_area(
+        label="Topic of Interest",
+        placeholder="e.g. The impact of AI in modern education",
+        height=100
     )
-    
-    # Add more sidebar controls if needed
-    st.markdown("### Advanced Settings")
-    temperature = st.slider("Temperature", 0.0, 1.0, 0.7)
-    
-    # Add some spacing
-    st.markdown("---")
-    
-    # Make the generate button more prominent in the sidebar
-    generate_button = st.button("Generate Content", type="primary", use_container_width=True)
-    
-    # Add some helpful information
-    with st.expander("ℹ️ How to use"):
-        st.markdown("""
-        1. Enter your desired topic in the text area above
-        2. Adjust the temperature if needed (higher = more creative)
-        3. Click 'Generate Content' to start
-        4. Wait for the AI to generate your article
-        5. Download the result as a markdown file
+
+    creativity = st.slider("Creativity (Temperature)", min_value=0.0, max_value=1.0, value=0.7)
+
+    generate_clicked = st.button("🚀 Generate Newsletter", use_container_width=True)
+
+    with st.expander("ℹ️ Instructions"):
+        st.write("""
+        - Enter your article topic.
+        - Adjust the creativity if you like.
+        - Click 'Generate Newsletter' to start.
+        - Download the markdown result.
         """)
 
-def generate_content(topic):
-    llm = LLM(
-        model="command-r",
-        temperature=0.7
-    )
+# --- Agent-based newsletter generation logic ---
 
-    search_tool = SerperDevTool(n_results=10)
+def generate_newsletter(topic_input: str, temp: float):
+    # Language model configuration
+    language_model = LLM(model="command-r", temperature=temp)
 
-    # First Agent: Senior Research Analyst
-    senior_research_analyst = Agent(
-        role="Senior Research Analyst",
-        goal=f"Research, analyze, and synthesize comprehensive information on {topic} from reliable web sources",
-        backstory="You're an expert research analyst with advanced web research skills. "
-                "You excel at finding, analyzing, and synthesizing information from "
-                "across the internet using search tools. You're skilled at "
-                "distinguishing reliable sources from unreliable ones, "
-                "fact-checking, cross-referencing information, and "
-                "identifying key patterns and insights. You provide "
-                "well-organized research briefs with proper citations "
-                "and source verification. Your analysis includes both "
-                "raw data and interpreted insights, making complex "
-                "information accessible and actionable.",
+    # Tool for web search
+    search_utility = SerperDevTool(n_results=10)
+
+    # Define researcher agent
+    researcher = Agent(
+        role="Research Strategist",
+        goal=f"Conduct deep web research from reliable web sources on: {topic_input}",
+        backstory=(
+            "You are a highly analytical Research Strategist trained in advanced information retrieval, web scraping, and source verification. "
+            "With a background in competitive intelligence and market research, your strength lies in rapidly synthesizing information from "
+            "structured and unstructured sources such as news portals, research publications, and open-access datasets. You excel in validating "
+            "information through triangulation, assessing source credibility using predefined heuristics, and extracting statistically significant trends. "
+            "You operate with high precision under ambiguous contexts and deliver outputs that are organized, citation-rich, and insight-driven. "
+            "Your findings prioritize recency, relevance, and factual reliability, enabling downstream agents to work from a high-confidence foundation."
+        ),
+        tools=[search_utility],
         allow_delegation=False,
         verbose=True,
-        tools=[search_tool],
-        llm=llm
+        llm=language_model
     )
 
-    # Second Agent: Content Writer
-    content_writer = Agent(
-        role="Content Writer",
-        goal="Transform research findings into engaging blog posts while maintaining accuracy",
-        backstory="You're a skilled content writer specialized in creating "
-                "engaging, accessible content from technical research. "
-                "You work closely with the Senior Research Analyst and excel at maintaining the perfect "
-                "balance between informative and entertaining writing, "
-                "while ensuring all facts and citations from the research "
-                "are properly incorporated. You have a talent for making "
-                "complex topics approachable without oversimplifying them.",
+    # Define writer agent
+    writer = Agent(
+        role="Narrative Creator",
+        goal="Transform research into a structured, engaging markdown article",
+        backstory=(
+            "You are a professional Narrative Creator with expertise in technical content design, SEO-optimized newsletter writing, and editorial storytelling. "
+            "Trained in the art of translating dense research into digestible, engaging prose, you specialize in content strategies that enhance reader comprehension "
+            "without diluting factual integrity. You follow a modular writing approach — crafting compelling hooks, informative sub-sections, and high-retention conclusions. "
+            "You ensure seamless integration of citations using markdown formatting, maintain tone consistency, and adapt writing style to suit domain-specific audiences. "
+            "Your experience spans journalism, scientific communication, and long-form content marketing. Your primary mission is to transform verified research into articles "
+            "that are not only informative but also emotionally resonant and share-worthy."
+        ),
         allow_delegation=False,
         verbose=True,
-        llm=llm
+        llm=language_model
     )
 
-    # Research Task
-    research_task = Task(
-        description=("""
-            1. Conduct comprehensive research on {topic} including:
-                - Recent developments and news
-                - Key industry trends and innovations
-                - Expert opinions and analyses
-                - Statistical data and market insights
-            2. Evaluate source credibility and fact-check all information
-            3. Organize findings into a structured research brief
-            4. Include all relevant citations and sources
-        """),
-        expected_output="""A detailed research report containing:
-            - Executive summary of key findings
-            - Comprehensive analysis of current trends and developments
-            - List of verified facts and statistics
-            - All citations and links to original sources
-            - Clear categorization of main themes and patterns
-            Please format with clear sections and bullet points for easy reference.""",
-        agent=senior_research_analyst
+    # Task for research
+    task_research = Task(
+        description="""
+            Conduct a comprehensive research investigation on the topic: **{topic_input}**.
+            
+            Your research must incorporate the following elements:
+            1. **Recent Developments** – Identify newsworthy events, product launches, regulations, or market shifts relevant to the topic from the past 6–12 months.
+            2. **Macro and Micro Trends** – Analyze short-term signals and long-term patterns using data from credible industry reports, whitepapers, and academic articles.
+            3. **Expert Opinions** – Extract commentary, forecasts, or critical assessments made by thought leaders, analysts, or domain experts.
+            4. **Quantitative Insights** – Include key statistics, charts, or benchmarks (e.g., market size, adoption rates, funding rounds, or user growth).
+            5. **Source Validation** – Prioritize high-authority, non-user-generated sources. Cross-check facts using at least two independent sources where possible.
+            6. **Contextual Background** – Add historical or conceptual framing that enhances understanding of current developments.
+            
+            All research findings should be:
+            - Structured into clearly categorized sections
+            - Presented in bullet-point format for easy parsing
+            - Hyperlinked to original sources in markdown `[Source](URL)` style
+            - Written in plain English with brief commentary for clarity
+            
+            Avoid speculation or unsupported claims. Ensure factual accuracy and present only verified insights.
+        """,
+        expected_output="""
+            A multi-section research brief including:
+            - Executive Summary (3–5 key findings)
+            - Categorized trends and data points
+            - Direct source citations for all information
+            - Insights grouped under logical themes (e.g., Technology, Market, Regulation)
+            - Markdown-compatible formatting
+        """,
+        agent=researcher
     )
 
-    # Writing Task
-    writing_task = Task(
-        description=("""
-            Using the research brief provided, create an engaging blog post that:
-            1. Transforms technical information into accessible content
-            2. Maintains all factual accuracy and citations from the research
-            3. Includes:
-                - Attention-grabbing introduction
-                - Well-structured body sections with clear headings
-                - Compelling conclusion
-            4. Preserves all source citations in [Source: URL] format
-            5. Includes a References section at the end
-        """),
-        expected_output="""A polished blog post in markdown format that:
-            - Engages readers while maintaining accuracy
-            - Contains properly structured sections
-            - Includes Inline citations hyperlinked to the original source url
-            - Presents information in an accessible yet informative way
-            - Follows proper markdown formatting, use H1 for the title and H3 for the sub-sections""",
-        agent=content_writer
+
+    # Task for writing
+    task_write = Task(
+        description="""
+            Based on the structured research brief provided by the Research Strategist, your objective is to create a well-crafted, markdown-formatted newsletter article.
+            
+            Your deliverable should exhibit:
+            1. **Narrative Structure**
+               - Title: Use H1 markdown (`# Title`) that is concise and SEO-aware.
+               - Introduction: Set context and articulate why the topic matters.
+               - Body: Organize into thematic H3 (`###`) sections. Present key insights with clarity and flow.
+               - Conclusion: Summarize implications, potential next steps, or open questions.
+            
+            2. **Writing Style**
+               - Maintain an informative yet accessible tone; balance technical accuracy with readability.
+               - Break long paragraphs into digestible chunks; use lists where appropriate.
+               - Apply rhetorical techniques (e.g., analogies, transitions, parallelism) to enhance engagement.
+            
+            3. **Citation and Attribution**
+               - Integrate hyperlinks for all facts, statistics, or quotes using `[Source](URL)` inline markdown style.
+               - Include a dedicated **References** section listing all sources.
+            
+            4. **Markdown Compliance**
+               - Ensure proper heading hierarchy (`#`, `###`)
+               - Use bolding, bullet lists, and links appropriately
+               - Ensure that the final output is render-ready for newsletters and newsletters and blog platforms like Medium, Ghost, or Notion.
+            
+            You are expected to preserve the integrity of the research findings while translating them into a compelling narrative fit for publication.
+        """,
+        expected_output="""
+            A complete newsletter in markdown format with:
+            - H1 title and multiple H3 subsections
+            - Inline citations with hyperlinks to credible sources
+            - Introduction and conclusion with high narrative quality
+            - Reference list at the end
+            - Reader-friendly formatting and natural flow
+        """,
+        agent=writer
     )
 
-    # Create Crew
-    crew = Crew(
-        agents=[senior_research_analyst, content_writer],
-        tasks=[research_task, writing_task],
+    # Create Crew and execute
+    newsletter_crew = Crew(
+        agents=[researcher, writer],
+        tasks=[task_research, task_write],
         verbose=True
     )
 
-    return crew.kickoff(inputs={"topic": topic})
+    return newsletter_crew.kickoff(inputs={"topic_input": topic_input})
 
-# Main content area
-if generate_button:
-    with st.spinner('Generating content... This may take a moment.'):
+
+# --- Main interaction flow ---
+if generate_clicked and user_topic.strip():
+    with st.spinner("🧠 Thinking and writing... please wait"):
         try:
-            result = generate_content(topic)
-            st.markdown("### Generated Content")
-            st.markdown(result)
-            
-            # Add download button
+            final_output = generate_newsletter(user_topic, creativity)
+            st.subheader("📝 Your AI-Generated Blog Post")
+            st.markdown(final_output)
+
             st.download_button(
-                label="Download Content",
-                data=result.raw,
-                file_name=f"{topic.lower().replace(' ', '_')}_article.md",
+                label="📥 Download as Markdown",
+                data=final_output.raw,
+                file_name=f"{user_topic.strip().lower().replace(' ', '_')}.md",
                 mime="text/markdown"
             )
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+        except Exception as err:
+            st.error(f"Something went wrong: {str(err)}")
 
 # Footer
 st.markdown("---")
-st.markdown("Built with CrewAI, Streamlit and powered by Cohere's Command R7B")
+st.caption("Crafted with 🛠️ CrewAI + Streamlit + Cohere")
+
