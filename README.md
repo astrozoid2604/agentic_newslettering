@@ -54,7 +54,7 @@ COHERE_API_KEY=your-cohere-api-key
 SERPER_API_KEY=your-serper-api-key
 ```
 
-Get your API keys here:
+You can get your personal API keys here:
 - [Serper API](https://serper.dev/)
 - [Cohere API](https://dashboard.cohere.com/api-keys)
 
