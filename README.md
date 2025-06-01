@@ -43,7 +43,7 @@ cd agentic_newslettering
 ```bash
 conda create -n aiagent python=3.10 -y
 conda activate aiagent
-pip install -r requirement.txt
+pip install -r requirements.xt
 ```
 
 ### 3. Configure your environment variables
