@@ -34,8 +34,8 @@ A multi-agent AI application that generates research-driven newsletter using [Cr
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/aiagent-news-generator.git
-cd aiagent-news-generator
+git clone git@github.com:astrozoid2604/agentic_newslettering.git
+cd agentic_newslettering
 ```
 
 ### 2. Set up the Conda environment
@@ -53,6 +53,10 @@ Create a `.env` file in the root directory:
 COHERE_API_KEY=your-cohere-api-key
 SERPER_API_KEY=your-serper-api-key
 ```
+
+Get your API keys here:
+- [Serper API](https://serper.dev/)
+- [Cohere API](https://dashboard.cohere.com/api-keys)
 
 ### 4. Launch the app
 
